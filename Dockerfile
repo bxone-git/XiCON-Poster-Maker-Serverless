@@ -23,16 +23,21 @@ RUN cd /ComfyUI/custom_nodes && \
 # Create model directories
 RUN mkdir -p /ComfyUI/models/diffusion_models /ComfyUI/models/vae /ComfyUI/models/clip
 
-# Download UNET (9.57 GB) - VERIFIED URL, NO HF TOKEN REQUIRED
-RUN wget -q "https://huggingface.co/Comfy-Org/flux2-klein-9B/resolve/main/flux-2-klein-base-9b-fp8.safetensors" \
+# Hugging Face Token for Gated Models (Required for Flux.2 Klein)
+ARG HF_TOKEN
+
+# Download UNET (9.57 GB) - GATED MODEL, REQUIRES HF TOKEN
+# Using Black Forest Labs official repository
+RUN wget -q --header="Authorization: Bearer ${HF_TOKEN}" \
+    "https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9b-fp8/resolve/main/flux-2-klein-base-9b-fp8.safetensors" \
     -O /ComfyUI/models/diffusion_models/flux-2-klein-base-9b-fp8.safetensors
 
-# Download CLIP (8.66 GB) - VERIFIED URL, NO HF TOKEN REQUIRED
-RUN wget -q "https://huggingface.co/Comfy-Org/flux2-klein-9B/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors" \
+# Download CLIP (8.66 GB) - Public URL
+RUN wget -q "https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors" \
     -O /ComfyUI/models/clip/qwen_3_8b_fp8mixed.safetensors
 
-# Download VAE (336 MB) - VERIFIED URL, NO HF TOKEN REQUIRED
-RUN wget -q "https://huggingface.co/Comfy-Org/flux2-klein-9B/resolve/main/split_files/vae/flux2-vae.safetensors" \
+# Download VAE (336 MB) - Public URL
+RUN wget -q "https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/vae/flux2-vae.safetensors" \
     -O /ComfyUI/models/vae/flux2-vae.safetensors
 
 COPY . .

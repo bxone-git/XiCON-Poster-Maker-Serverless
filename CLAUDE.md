@@ -70,13 +70,28 @@ Push가 감지 안 될 경우 빈 커밋으로 트리거:
 git commit --allow-empty -m "Trigger rebuild" && git push
 ```
 
-### 6. 모델 다운로드 URL
+### 6. 모델 다운로드 URL (⚠️ HF 토큰 필수)
 
-HuggingFace 토큰 불필요한 공개 저장소 사용:
+**Flux.2 Klein 모델은 Gated Model이므로 HuggingFace 토큰이 필요합니다:**
+
 ```dockerfile
-# Comfy-Org 공개 저장소 (토큰 불필요)
-wget "https://huggingface.co/Comfy-Org/flux2-klein-9B/resolve/main/..."
+# Dockerfile에서 ARG로 토큰 받음
+ARG HF_TOKEN
+
+# wget에 Authorization 헤더 추가
+RUN wget -q --header="Authorization: Bearer ${HF_TOKEN}" \
+    "https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9b-fp8/resolve/main/flux-2-klein-base-9b-fp8.safetensors" \
+    -O /ComfyUI/models/diffusion_models/flux-2-klein-base-9b-fp8.safetensors
 ```
+
+**빌드 시 토큰 전달:**
+```bash
+docker build --build-arg HF_TOKEN=hf_your_token_here -t xicon-poster-maker .
+```
+
+**사전 조건:**
+1. HuggingFace에서 액세스 토큰 생성
+2. [FLUX.2-klein-base-9b-fp8](https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9b-fp8) 모델 페이지에서 라이선스 동의
 
 ### 7. handler.py 필수 구조
 
@@ -143,4 +158,7 @@ docker push blendx/xicon-poster-maker:latest
 | 테스트 무한 대기 | hub.json/tests.json 불일치 | 설정 동기화 |
 | CUDA 오류 | 드라이버 미지원 | CUDA 버전 다운그레이드 |
 | 빌드 미트리거 | Webhook 미감지 | 빈 커밋 push |
-| 모델 다운로드 실패 | HF 토큰 필요 | Comfy-Org 공개 URL 사용 |
+| 403 Forbidden (모델) | HF 라이선스 미동의 | 모델 페이지에서 "Agree and access" 클릭 |
+| 401 Unauthorized (모델) | HF 토큰 누락/무효 | `--build-arg HF_TOKEN=hf_...` 확인 |
+
+자세한 빌드 가이드: [README_BUILD.md](./README_BUILD.md)
