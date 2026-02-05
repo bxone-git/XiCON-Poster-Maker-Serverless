@@ -70,26 +70,32 @@ Push가 감지 안 될 경우 빈 커밋으로 트리거:
 git commit --allow-empty -m "Trigger rebuild" && git push
 ```
 
-### 6. 모델 다운로드 (⚠️ Klein은 Gated Model)
+### 6. Network Volume 방식 (현재 사용)
 
-**Klein 모델은 Docker 이미지에 포함 (빌드 전 로컬 다운로드 필요):**
+**모델은 Network Volume "XiCON"에서 로드:**
 
-```bash
-# 1. HuggingFace 로그인
-huggingface-cli login
-
-# 2. Klein 모델 다운로드
-./download_models.sh
+```
+/runpod-volume/
+├── models/
+│   ├── diffusion_models/
+│   │   └── flux-2-klein-base-9b-fp8.safetensors  (~9GB, Gated)
+│   ├── text_encoders/                            # ⚠️ clip/ 아님!
+│   │   └── qwen_3_8b_fp8mixed.safetensors        (~8GB)
+│   └── vae/
+│       └── flux2-vae.safetensors                 (~300MB)
 ```
 
-**CLIP/VAE는 런타임에 자동 다운로드 (Public URL):**
-- CLIP: `https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors`
-- VAE: `https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/vae/flux2-vae.safetensors`
+**⚠️ 중요: ComfyUI CLIPLoader는 `text_encoders/` 디렉토리를 사용 (clip/ 아님)**
+
+**최초 모델 설정 (Network Volume에서 1회 실행):**
+```bash
+./setup_netvolume.sh
+```
 
 **빌드 명령어:**
 ```bash
-docker build --platform linux/amd64 -t blendx/xicon-poster-maker:latest .
-docker push blendx/xicon-poster-maker:latest
+docker build --platform linux/amd64 -t blendx/xicon-poster-maker:netvolume .
+docker push blendx/xicon-poster-maker:netvolume
 ```
 
 ### 7. handler.py 필수 구조
