@@ -16,6 +16,6 @@
   "config": {
     "gpuTypeId": "ADA_24",
     "gpuCount": 1,
-    "allowedCudaVersions": ["12.7"]
+    "allowedCudaVersions": ["12.8"]
   }
 }
