@@ -1,0 +1,14 @@
+{
+    "title": "XiCON Poster Maker",
+    "description": "XiCON Poster Maker creates magazine-style posters with typography overlay and transparent envelope packaging using Flux 2 Klein 9B. Two-stage I2I pipeline for high-quality editorial poster generation.",
+    "type": "serverless",
+    "category": "image",
+    "iconUrl": "https://github.com/bxone-git/Engui_Studio/blob/main/assets/logo.png?raw=true",
+    "config": {
+        "runsOn": "GPU",
+        "containerDiskInGb": 40,
+        "gpuCount": 1,
+        "gpuIds": "ADA_24,ADA_32_PRO",
+        "allowedCudaVersions": ["12.8"]
+    }
+}
