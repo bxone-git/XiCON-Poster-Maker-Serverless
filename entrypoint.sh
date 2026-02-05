@@ -3,41 +3,77 @@ set -e
 
 echo "=== XiCON Poster Maker Startup ==="
 
-# Verify Klein model exists (from base image via symlink)
+# ==========================================
+# Network Volume Setup
+# ==========================================
+NETVOLUME="/runpod-volume"
+
+if [ -d "$NETVOLUME" ] && [ -d "$NETVOLUME/models" ]; then
+    echo "Network Volume found at $NETVOLUME"
+    echo "Creating symlinks to ComfyUI models directory..."
+
+    # Remove existing directories (if any)
+    rm -rf /ComfyUI/models/diffusion_models
+    rm -rf /ComfyUI/models/clip
+    rm -rf /ComfyUI/models/vae
+
+    # Create parent directory if needed
+    mkdir -p /ComfyUI/models
+
+    # Create symlinks
+    ln -sf $NETVOLUME/models/diffusion_models /ComfyUI/models/diffusion_models
+    ln -sf $NETVOLUME/models/clip /ComfyUI/models/clip
+    ln -sf $NETVOLUME/models/vae /ComfyUI/models/vae
+
+    echo "Symlinks created successfully!"
+else
+    echo "WARNING: Network Volume not found at $NETVOLUME"
+    echo "Using models from container (if available)"
+fi
+
+# ==========================================
+# Model Verification
+# ==========================================
+echo ""
+echo "Verifying models..."
+
+# Verify Klein model
 KLEIN_PATH="/ComfyUI/models/diffusion_models/flux-2-klein-base-9b-fp8.safetensors"
-if [ ! -f "$KLEIN_PATH" ] && [ ! -L "$KLEIN_PATH" ]; then
-    echo "ERROR: Klein model not found at $KLEIN_PATH"
-    echo "Base image may be incorrect or symlink missing"
+if [ -f "$KLEIN_PATH" ] || [ -L "$KLEIN_PATH" ]; then
+    echo "  Klein model: OK"
+else
+    echo "  ERROR: Klein model not found at $KLEIN_PATH"
+    echo "  Run setup_netvolume.sh first to download models"
     exit 1
 fi
-echo "Klein model: OK (symlinked from base image)"
 
-# Download CLIP model if not exists (PUBLIC URL, no auth needed)
+# Verify CLIP model
 CLIP_PATH="/ComfyUI/models/clip/qwen_3_8b_fp8mixed.safetensors"
-if [ ! -f "$CLIP_PATH" ]; then
-    echo "Downloading CLIP model (qwen_3_8b_fp8mixed.safetensors)..."
-    wget -q --tries=3 --show-progress \
-        "https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors" \
-        -O "$CLIP_PATH"
-    echo "CLIP model downloaded successfully"
+if [ -f "$CLIP_PATH" ] || [ -L "$CLIP_PATH" ]; then
+    echo "  CLIP model: OK"
 else
-    echo "CLIP model already exists, skipping download"
+    echo "  ERROR: CLIP model not found at $CLIP_PATH"
+    echo "  Run setup_netvolume.sh first to download models"
+    exit 1
 fi
 
-# Download VAE model if not exists (PUBLIC URL, no auth needed)
+# Verify VAE model
 VAE_PATH="/ComfyUI/models/vae/flux2-vae.safetensors"
-if [ ! -f "$VAE_PATH" ]; then
-    echo "Downloading VAE model (flux2-vae.safetensors)..."
-    wget -q --tries=3 --show-progress \
-        "https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/vae/flux2-vae.safetensors" \
-        -O "$VAE_PATH"
-    echo "VAE model downloaded successfully"
+if [ -f "$VAE_PATH" ] || [ -L "$VAE_PATH" ]; then
+    echo "  VAE model: OK"
 else
-    echo "VAE model already exists, skipping download"
+    echo "  ERROR: VAE model not found at $VAE_PATH"
+    echo "  Run setup_netvolume.sh first to download models"
+    exit 1
 fi
 
+echo ""
 echo "All models ready!"
 
+# ==========================================
+# Start ComfyUI
+# ==========================================
+echo ""
 echo "Starting ComfyUI in the background..."
 python /ComfyUI/main.py --listen --use-sage-attention &
 
@@ -59,5 +95,6 @@ if [ $wait_count -ge $max_wait ]; then
     exit 1
 fi
 
+echo ""
 echo "Starting the handler..."
 exec python handler.py

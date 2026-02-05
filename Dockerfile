@@ -1,4 +1,8 @@
-FROM blendx/xicon-poster-maker-base:klein-9b-fp8 as runtime
+# XiCON Poster Maker - Network Volume Version
+# Models are loaded from /runpod-volume (Network Volume: XiCON)
+# Tag: blendx/xicon-poster-maker:netvolume
+
+FROM wlsdml1114/multitalk-base:1.7 as runtime
 
 RUN pip install -U "huggingface_hub[hf_transfer]"
 RUN pip install runpod websocket-client
@@ -23,34 +27,25 @@ RUN cd /ComfyUI/custom_nodes && \
     cd ComfyUI-KJNodes && \
     pip install -r requirements.txt
 
-# Create model directories
+# Create model directories (will be symlinked to network volume at runtime)
 RUN mkdir -p /ComfyUI/models/diffusion_models /ComfyUI/models/vae /ComfyUI/models/clip
 
-# Symlink Klein model from base image
-RUN ln -sf /models/diffusion_models/flux-2-klein-base-9b-fp8.safetensors \
-    /ComfyUI/models/diffusion_models/flux-2-klein-base-9b-fp8.safetensors
-
-# CLIP and VAE are downloaded at runtime (public URLs, no auth needed)
-# See entrypoint.sh for download logic
+# NO MODEL DOWNLOADS - Models will be loaded from Network Volume
 
 COPY . .
 
 # Copy workflow JSON
 RUN if [ -f /XiCON_Poster_Maker_I2I_api.json ]; then \
-        echo "Workflow JSON found and copied"; \
-    else \
-        echo "WARNING: XiCON_Poster_Maker_I2I_api.json not found - needs to be created"; \
+        echo "Workflow JSON found"; \
     fi
 
 # Copy config.ini for ComfyUI-Manager
 RUN mkdir -p /ComfyUI/user/default/ComfyUI-Manager
 RUN if [ -f /config.ini ]; then \
         cp /config.ini /ComfyUI/user/default/ComfyUI-Manager/config.ini; \
-        echo "config.ini copied"; \
-    else \
-        echo "WARNING: config.ini not found - needs to be created"; \
     fi
 
 RUN chmod +x /entrypoint.sh
+RUN chmod +x /setup_netvolume.sh 2>/dev/null || true
 
 CMD ["/entrypoint.sh"]
