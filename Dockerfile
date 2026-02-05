@@ -28,7 +28,7 @@ RUN cd /ComfyUI/custom_nodes && \
     pip install -r requirements.txt
 
 # Create model directories (will be symlinked to network volume at runtime)
-RUN mkdir -p /ComfyUI/models/diffusion_models /ComfyUI/models/vae /ComfyUI/models/clip
+RUN mkdir -p /ComfyUI/models/diffusion_models /ComfyUI/models/vae /ComfyUI/models/text_encoders
 
 # NO MODEL DOWNLOADS - Models will be loaded from Network Volume
 

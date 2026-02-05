@@ -14,7 +14,7 @@ if [ -d "$NETVOLUME" ] && [ -d "$NETVOLUME/models" ]; then
 
     # Remove existing directories (if any)
     rm -rf /ComfyUI/models/diffusion_models
-    rm -rf /ComfyUI/models/clip
+    rm -rf /ComfyUI/models/text_encoders
     rm -rf /ComfyUI/models/vae
 
     # Create parent directory if needed
@@ -22,7 +22,7 @@ if [ -d "$NETVOLUME" ] && [ -d "$NETVOLUME/models" ]; then
 
     # Create symlinks
     ln -sf $NETVOLUME/models/diffusion_models /ComfyUI/models/diffusion_models
-    ln -sf $NETVOLUME/models/clip /ComfyUI/models/clip
+    ln -sf $NETVOLUME/models/text_encoders /ComfyUI/models/text_encoders
     ln -sf $NETVOLUME/models/vae /ComfyUI/models/vae
 
     echo "Symlinks created successfully!"
@@ -47,12 +47,12 @@ else
     exit 1
 fi
 
-# Verify CLIP model
-CLIP_PATH="/ComfyUI/models/clip/qwen_3_8b_fp8mixed.safetensors"
-if [ -f "$CLIP_PATH" ] || [ -L "$CLIP_PATH" ]; then
-    echo "  CLIP model: OK"
+# Verify Text Encoder model
+TEXT_ENC_PATH="/ComfyUI/models/text_encoders/qwen_3_8b_fp8mixed.safetensors"
+if [ -f "$TEXT_ENC_PATH" ] || [ -L "$TEXT_ENC_PATH" ]; then
+    echo "  Text Encoder model: OK"
 else
-    echo "  ERROR: CLIP model not found at $CLIP_PATH"
+    echo "  ERROR: Text Encoder model not found at $TEXT_ENC_PATH"
     echo "  Run setup_netvolume.sh first to download models"
     exit 1
 fi

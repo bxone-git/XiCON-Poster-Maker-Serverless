@@ -17,7 +17,7 @@ fi
 # Create directory structure
 echo "Creating directory structure..."
 mkdir -p $NETVOLUME/models/diffusion_models
-mkdir -p $NETVOLUME/models/clip
+mkdir -p $NETVOLUME/models/text_encoders
 mkdir -p $NETVOLUME/models/vae
 
 # Download Klein model (requires HuggingFace auth)
@@ -36,17 +36,17 @@ else
     echo "[SKIP] Klein model already exists"
 fi
 
-# Download CLIP (public URL)
+# Download Text Encoder (public URL)
 echo ""
-echo "[2/3] CLIP model (~8GB)"
-if [ ! -f "$NETVOLUME/models/clip/qwen_3_8b_fp8mixed.safetensors" ]; then
-    echo "Downloading CLIP model..."
+echo "[2/3] Text Encoder model (~8GB)"
+if [ ! -f "$NETVOLUME/models/text_encoders/qwen_3_8b_fp8mixed.safetensors" ]; then
+    echo "Downloading Text Encoder model..."
     wget -q --show-progress \
         "https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors" \
-        -O "$NETVOLUME/models/clip/qwen_3_8b_fp8mixed.safetensors"
-    echo "CLIP model downloaded!"
+        -O "$NETVOLUME/models/text_encoders/qwen_3_8b_fp8mixed.safetensors"
+    echo "Text Encoder model downloaded!"
 else
-    echo "[SKIP] CLIP model already exists"
+    echo "[SKIP] Text Encoder model already exists"
 fi
 
 # Download VAE (public URL)
@@ -69,7 +69,7 @@ echo "=========================================="
 echo ""
 echo "Model sizes:"
 du -sh $NETVOLUME/models/diffusion_models 2>/dev/null || echo "  diffusion_models: (pending)"
-du -sh $NETVOLUME/models/clip 2>/dev/null || echo "  clip: (pending)"
+du -sh $NETVOLUME/models/text_encoders 2>/dev/null || echo "  text_encoders: (pending)"
 du -sh $NETVOLUME/models/vae 2>/dev/null || echo "  vae: (pending)"
 echo ""
 echo "Total:"
