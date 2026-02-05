@@ -5,3 +5,10 @@ __pycache__/
 *.pyc
 *.pyo
 .DS_Store
+
+# Local model files (not committed - too large)
+models/
+*.safetensors
+
+# Logs
+logs/

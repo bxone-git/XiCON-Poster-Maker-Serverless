@@ -70,28 +70,27 @@ Push가 감지 안 될 경우 빈 커밋으로 트리거:
 git commit --allow-empty -m "Trigger rebuild" && git push
 ```
 
-### 6. 모델 다운로드 URL (⚠️ HF 토큰 필수)
+### 6. 모델 다운로드 (⚠️ Klein은 Gated Model)
 
-**Flux.2 Klein 모델은 Gated Model이므로 HuggingFace 토큰이 필요합니다:**
+**Klein 모델은 Docker 이미지에 포함 (빌드 전 로컬 다운로드 필요):**
 
-```dockerfile
-# Dockerfile에서 ARG로 토큰 받음
-ARG HF_TOKEN
-
-# wget에 Authorization 헤더 추가
-RUN wget -q --header="Authorization: Bearer ${HF_TOKEN}" \
-    "https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9b-fp8/resolve/main/flux-2-klein-base-9b-fp8.safetensors" \
-    -O /ComfyUI/models/diffusion_models/flux-2-klein-base-9b-fp8.safetensors
-```
-
-**빌드 시 토큰 전달:**
 ```bash
-docker build --build-arg HF_TOKEN=hf_your_token_here -t xicon-poster-maker .
+# 1. HuggingFace 로그인
+huggingface-cli login
+
+# 2. Klein 모델 다운로드
+./download_models.sh
 ```
 
-**사전 조건:**
-1. HuggingFace에서 액세스 토큰 생성
-2. [FLUX.2-klein-base-9b-fp8](https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9b-fp8) 모델 페이지에서 라이선스 동의
+**CLIP/VAE는 런타임에 자동 다운로드 (Public URL):**
+- CLIP: `https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors`
+- VAE: `https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/vae/flux2-vae.safetensors`
+
+**빌드 명령어:**
+```bash
+docker build --platform linux/amd64 -t blendx/xicon-poster-maker:latest .
+docker push blendx/xicon-poster-maker:latest
+```
 
 ### 7. handler.py 필수 구조
 
@@ -132,21 +131,37 @@ prompt["2"]["inputs"]["image"] = image_path  # LoadImage
 
 ## 빌드 & 배포 명령어
 
-### Hub 배포 (CUDA 12.7, Ada GPU)
+### 방법 1: RunPod Hub 자동 배포 (권장)
+
+**사전 조건**: Base 이미지가 Docker Hub에 존재해야 함
+
 ```bash
+# Git push만으로 Hub에서 자동 빌드/배포
+git add .
+git commit -m "Update for Hub deployment"
 git push origin main
-# RunPod Hub에서 자동 빌드
 ```
 
-### Serverless 직접 배포 (CUDA 12.8, RTX 5090)
+### 방법 2: Base 이미지 빌드 (최초 1회 또는 Klein 모델 업데이트 시)
+
 ```bash
-# 1. 빌드
+# 1. Klein 모델 다운로드 (HuggingFace 인증 필요)
+huggingface-cli login
+./download_models.sh
+
+# 2. Base 이미지 빌드
+docker build --platform linux/amd64 -f Dockerfile.base -t blendx/xicon-poster-maker-base:klein-9b-fp8 .
+
+# 3. Docker Hub에 Push
+docker push blendx/xicon-poster-maker-base:klein-9b-fp8
+```
+
+### 방법 3: 직접 Docker 배포 (Hub 대신)
+
+```bash
 docker build --platform linux/amd64 -t blendx/xicon-poster-maker:latest .
-
-# 2. Push
 docker push blendx/xicon-poster-maker:latest
-
-# 3. RunPod Serverless → New Endpoint → Custom Image
+# RunPod Serverless에서 직접 이미지 지정
 ```
 
 ---
@@ -158,7 +173,7 @@ docker push blendx/xicon-poster-maker:latest
 | 테스트 무한 대기 | hub.json/tests.json 불일치 | 설정 동기화 |
 | CUDA 오류 | 드라이버 미지원 | CUDA 버전 다운그레이드 |
 | 빌드 미트리거 | Webhook 미감지 | 빈 커밋 push |
-| 403 Forbidden (모델) | HF 라이선스 미동의 | 모델 페이지에서 "Agree and access" 클릭 |
-| 401 Unauthorized (모델) | HF 토큰 누락/무효 | `--build-arg HF_TOKEN=hf_...` 확인 |
+| 403 Forbidden (모델) | HF 라이선스 미동의 | `huggingface-cli login` 후 모델 페이지에서 "Agree and access" 클릭 |
+| 모델 다운로드 실패 | 로컬 다운로드 누락 | `./download_models.sh` 실행 후 재빌드 |
 
 자세한 빌드 가이드: [README_BUILD.md](./README_BUILD.md)

@@ -1,0 +1,11 @@
+# Dockerfile.base - Klein 9B 모델 포함 Base Image
+# Build: docker build --platform linux/amd64 -f Dockerfile.base -t blendx/xicon-poster-maker-base:klein-9b-fp8 .
+# Push: docker push blendx/xicon-poster-maker-base:klein-9b-fp8
+
+FROM wlsdml1114/multitalk-base:1.7
+
+# Klein 모델 디렉토리 생성
+RUN mkdir -p /models/diffusion_models
+
+# Klein 모델 복사 (로컬에서 download_models.sh로 다운로드 후)
+COPY models/diffusion_models/flux-2-klein-base-9b-fp8.safetensors /models/diffusion_models/flux-2-klein-base-9b-fp8.safetensors

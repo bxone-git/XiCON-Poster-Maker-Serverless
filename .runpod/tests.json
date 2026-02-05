@@ -10,12 +10,12 @@
         "cfg": 5,
         "seed": 42
       },
-      "timeout": 600000
+      "timeout": 900000
     }
   ],
   "config": {
     "gpuTypeId": "ADA_24",
     "gpuCount": 1,
-    "allowedCudaVersions": ["12.8"]
+    "allowedCudaVersions": ["12.7"]
   }
 }

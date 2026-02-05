@@ -1,28 +1,70 @@
-# Building XiCON Poster Maker Serverless
+# XiCON Poster Maker - Build Guide
 
-This project uses the **Flux.2 Klein (9B)** model, which is a gated model hosted by Black Forest Labs on Hugging Face.
+## Prerequisites
 
-## ⚠️ Important: Authentication Required
+1. HuggingFace CLI 설치 및 로그인
+   ```bash
+   pip install huggingface_hub
+   huggingface-cli login
+   ```
 
-To build this Docker image, you **MUST** provide a Hugging Face Access Token. The token must have:
-1.  **Read access** to gated repositories.
-2.  Been used to **accept the license agreement** on the [FLUX.2-klein-base-9b-fp8 model page](https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9b-fp8).
+2. [FLUX.2-klein-base-9b-fp8](https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9b-fp8) 모델 라이선스 동의
 
-## How to Build
+## Recommended: Docker Hub + RunPod Serverless
 
-Use the `--build-arg` flag to pass your token during the build process.
+RunPod Hub는 빌드 시크릿을 지원하지 않으므로, **Docker Hub 직접 배포**를 권장합니다.
+
+### Step 1: Download Klein Model (Local)
+
+Klein 모델은 Gated Model이므로 로컬에서 사전 다운로드 필요:
 
 ```bash
-# Replace hf_... with your actual token
-docker build --build-arg HF_TOKEN=hf_your_token_here -t xicon-poster-maker .
+chmod +x download_models.sh
+./download_models.sh
 ```
 
-## Troubleshooting
+이 스크립트는 `models/diffusion_models/flux-2-klein-base-9b-fp8.safetensors` (9.57GB)를 다운로드합니다.
 
-### 403 Forbidden Error
-If you see a `403 Forbidden` error during the `wget` step for `flux-2-klein-base-9b-fp8.safetensors`:
-1.  Verify your token is valid.
-2.  Go to [https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9b-fp8](https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9b-fp8) and ensure you have clicked **"Agree and access repository"**.
+### Step 2: Build Docker Image
 
-### 401 Unauthorized Error
-This indicates the token is missing or invalid. Check that you included `--build-arg HF_TOKEN=...` in your command.
+```bash
+docker build --platform linux/amd64 -t blendx/xicon-poster-maker:latest .
+```
+
+**Note**: Klein 모델이 이미지에 포함되므로 빌드에 시간이 걸릴 수 있습니다.
+
+### Step 3: Push to Docker Hub
+
+```bash
+docker push blendx/xicon-poster-maker:latest
+```
+
+### Step 4: Deploy on RunPod Serverless
+
+1. RunPod Serverless → New Endpoint
+2. Container Image: `blendx/xicon-poster-maker:latest`
+3. GPU: Ada 24GB 이상
+
+## Model Information
+
+| Model | Size | Source | Auth |
+|-------|------|--------|------|
+| Klein UNET | 9.57 GB | Docker Image (COPY) | N/A |
+| CLIP (Qwen) | 8.66 GB | Runtime Download | Public |
+| VAE | 336 MB | Runtime Download | Public |
+
+## Cold Start Time
+
+- First run (CLIP/VAE download): ~3-5 minutes
+- Subsequent runs (warm worker): ~30 seconds
+
+## Alternative: Git LFS for Hub Auto-Build
+
+If you want RunPod Hub auto-build:
+
+1. Install Git LFS: `git lfs install`
+2. Track models: `git lfs track "*.safetensors"`
+3. Commit models/ directory
+4. Push to GitHub → Hub auto-builds
+
+**Note**: This incurs GitHub LFS storage costs for ~10GB file.
